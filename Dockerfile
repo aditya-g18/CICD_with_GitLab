@@ -1,7 +1,7 @@
 # Use an official Python runtime as a parent image
 FROM python:3.8-slim
 
-# Install curl and other necessary packages
+# Install curl
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory
