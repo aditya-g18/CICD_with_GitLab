@@ -1,51 +1,23 @@
-image: docker:latest
-
-services:
-  - docker:dind  # Enables Docker-in-Docker for building and pushing images
-
-variables:
-  DOCKER_DRIVER: overlay2
-
 stages:
   - build
   - test
   - deploy
 
-before_script:
-  - docker info  # For debugging, this will show docker setup details
-  - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-  - apk add --no-cache curl  # Install curl in the Docker image if not present
-
+# Build stage
 build:
   stage: build
   script:
-    - echo "Building Docker image..."
-    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME .
-    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
+    - docker build -t myapp .
 
+# Test stage
 test:
   stage: test
   script:
-    - echo "Running the Docker container..."
-    - docker run --rm -d -p 5000:5000 $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
-    - |
-      echo "Waiting for the app to start..."
-      for i in {1..30}; do
-        if curl -s http://localhost:5000 > /dev/null; then
-          echo "App is up!"
-          break
-        fi
-        echo "Waiting for app to start..."
-        sleep 2
-      done
-      # Fail the job if the app is not up after waiting
-      curl -f http://localhost:5000 || exit 1
+    - docker run -d -p 5000:5000 myapp
+    - curl http://localhost:5000
 
+# Deploy stage
 deploy:
   stage: deploy
   script:
-    - echo "Deploying the application..."
-    - echo "Deploy steps would go here, such as pushing the image to a production server or Kubernetes."
-    - echo "Deploying to Kubernetes..."
-    - kubectl apply -f deployment.yaml
-    - echo "Deployment complete!"
+    - docker push myapp:latest
